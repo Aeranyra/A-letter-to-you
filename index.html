@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aera Nyra — The Unwritten Vow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#13101a;
+    --bg-card:#1d1722;
+    --text-bone:#ece6da;
+    --text-muted:#a89bb0;
+    --accent-rose:#8a2e3b;
+    --accent-gold:#b8915a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg-deep);color:var(--text-bone);font-family:'EB Garamond',serif;overflow-x:hidden;}
+  .scene{
+    min-height:100vh;
+    display:none;
+    position:relative;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    padding:2rem 1.25rem;
+    text-align:center;
+  }
+  .scene.active{display:flex;}
+  .scene::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 50% 35%, rgba(184,145,90,0.10), transparent 60%);
+    pointer-events:none;
+  }
+  .bg-photo{
+    position:absolute;
+    inset:0;
+    background-size:cover;
+    background-position:center;
+    opacity:0.16;
+    filter:blur(1px) saturate(0.7);
+    transition:opacity 1.4s ease;
+  }
+  .vignette{
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 50% 50%, transparent 35%, var(--bg-deep) 92%);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:'EB Garamond',serif;
+    font-size:12px;
+    letter-spacing:2.5px;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin-bottom:1.25rem;
+    z-index:2;
+  }
+  .title{
+    font-family:'Cormorant Garamond',serif;
+    font-weight:500;
+    font-size:clamp(28px,6vw,44px);
+    color:var(--text-bone);
+    margin:0 0 1.5rem;
+    z-index:2;
+    letter-spacing:0.5px;
+  }
+  .dialogue-box{
+    position:relative;
+    z-index:2;
+    max-width:560px;
+    width:100%;
+    background:rgba(29,23,34,0.78);
+    border:0.5px solid rgba(184,145,90,0.35);
+    border-radius:4px;
+    padding:2.25rem 1.75rem;
+    backdrop-filter:blur(2px);
+    transform-origin:top center;
+    transform:scaleY(0.04) scaleX(0.86);
+    opacity:0;
+    transition:transform 1.1s cubic-bezier(.22,1,.36,1), opacity 0.5s ease;
+  }
+  .dialogue-box.unfolded{
+    transform:scaleY(1) scaleX(1);
+    opacity:1;
+  }
+  .fold-line{
+    position:absolute;
+    left:6%;
+    right:6%;
+    height:0.5px;
+    background:rgba(184,145,90,0.25);
+    z-index:3;
+    pointer-events:none;
+  }
+  .fold-line.f1{top:33%;}
+  .fold-line.f2{top:66%;}
+  .seal-wax{
+    position:absolute;
+    top:-16px;
+    left:50%;
+    transform:translateX(-50%) scale(0);
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #a8475a, var(--accent-rose));
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+    z-index:4;
+    transition:transform 0.6s cubic-bezier(.34,1.56,.64,1);
+  }
+  .seal-wax.show{transform:translateX(-50%) scale(1);}
+  .seal-wax::after{
+    content:"♥";
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    color:rgba(20,10,12,0.55);
+  }
+  .line{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:19px;
+    line-height:1.85;
+    color:var(--text-bone);
+    margin:0 0 1rem;
+    opacity:0;
+    transform:translateY(8px);
+    transition:opacity 0.9s ease, transform 0.9s ease;
+  }
+  .line.show{opacity:1;transform:translateY(0);}
+  .advance{
+    margin-top:1.5rem;
+    font-size:12px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--accent-gold);
+    cursor:pointer;
+    opacity:0;
+    transition:opacity 0.6s ease;
+    user-select:none;
+  }
+  .advance.show{opacity:1;animation:pulse 1.8s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:0.55;}50%{opacity:1;}}
+  .answer-row{
+    display:none;
+    margin-top:1.75rem;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .answer-row.show{display:flex;}
+  input[type="text"]{
+    background:rgba(0,0,0,0.25);
+    border:0.5px solid rgba(184,145,90,0.4);
+    color:var(--text-bone);
+    font-family:'EB Garamond',serif;
+    font-size:15px;
+    padding:10px 14px;
+    border-radius:3px;
+    outline:none;
+    min-width:200px;
+    text-align:center;
+  }
+  input[type="text"]::placeholder{color:var(--text-muted);}
+  input[type="text"]:focus{border-color:var(--accent-gold);}
+  button{
+    background:transparent;
+    border:0.5px solid var(--accent-gold);
+    color:var(--accent-gold);
+    font-family:'EB Garamond',serif;
+    font-size:13px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    padding:10px 18px;
+    border-radius:3px;
+    cursor:pointer;
+    transition:background 0.3s ease, color 0.3s ease;
+  }
+  button:hover{background:var(--accent-gold);color:var(--bg-deep);}
+  .hint{
+    margin-top:0.9rem;
+    font-size:13px;
+    color:var(--text-muted);
+    min-height:18px;
+    opacity:0;
+    transition:opacity 0.5s ease;
+  }
+  .hint.show{opacity:1;}
+  .seal-progress{
+    position:fixed;
+    top:18px;
+    right:18px;
+    z-index:10;
+    width:34px;
+    height:34px;
+    opacity:0.8;
+  }
+  .seal-progress svg{width:100%;height:100%;}
+  .sound-toggle{
+    position:fixed;
+    top:18px;
+    left:18px;
+    z-index:10;
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    border:0.5px solid rgba(184,145,90,0.4);
+    background:rgba(29,23,34,0.6);
+    color:var(--accent-gold);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    font-size:14px;
+    user-select:none;
+  }
+  .reveal-content{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:19px;
+    line-height:1.9;
+    color:var(--text-bone);
+  }
+  .reveal-content .strong-line{
+    font-weight:500;
+    font-style:normal;
+    font-size:21px;
+    color:var(--accent-gold);
+  }
+  .typing-cursor{
+    display:inline-block;
+    width:1px;
+    height:1em;
+    background:var(--accent-gold);
+    margin-left:2px;
+    vertical-align:-2px;
+    animation:blink 0.85s steps(1) infinite;
+  }
+  @keyframes blink{50%{opacity:0;}}
+  .decor-layer{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    pointer-events:none;
+    z-index:1;
+  }
+  .decor-item{
+    position:absolute;
+    opacity:0;
+    font-size:20px;
+    color:var(--accent-gold);
+    animation:driftFloat linear infinite;
+  }
+  @keyframes driftFloat{
+    0%{opacity:0;transform:translateY(0) rotate(0deg);}
+    8%{opacity:0.5;}
+    92%{opacity:0.5;}
+    100%{opacity:0;transform:translateY(-90vh) rotate(40deg);}
+  }
+  .corner-ornament{
+    position:absolute;
+    width:46px;
+    height:46px;
+    opacity:0.35;
+    z-index:2;
+    pointer-events:none;
+  }
+  .corner-ornament.tl{top:14px;left:14px;border-top:0.5px solid var(--accent-gold);border-left:0.5px solid var(--accent-gold);}
+  .corner-ornament.br{bottom:14px;right:14px;border-bottom:0.5px solid var(--accent-gold);border-right:0.5px solid var(--accent-gold);}
+  .gallery{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    margin-top:2rem;
+    flex-wrap:wrap;
+    z-index:2;
+  }
+  .gallery img{
+    width:54px;
+    height:54px;
+    object-fit:cover;
+    border-radius:50%;
+    border:0.5px solid rgba(184,145,90,0.5);
+    opacity:0.85;
+    filter:saturate(0.8);
+  }
+  .crack{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:1;
+    opacity:0;
+    transition:opacity 1.2s ease;
+  }
+  .crack.show{opacity:1;}
+  .fade-overlay{
+    position:fixed;
+    inset:0;
+    background:#000;
+    z-index:20;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.5s ease;
+  }
+  .fade-overlay.active{opacity:1;pointer-events:all;}
+  @media (max-width:480px){
+    .dialogue-box{padding:1.75rem 1.25rem;}
+    .line{font-size:17px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="sound-toggle" id="soundToggle" title="Toggle music">♪</div>
+<div class="seal-progress" id="sealProgress">
+  <svg viewBox="0 0 40 40">
+    <circle cx="20" cy="20" r="17" fill="none" stroke="#b8915a" stroke-width="1" opacity="0.5"/>
+    <circle id="sealArc" cx="20" cy="20" r="17" fill="none" stroke="#8a2e3b" stroke-width="2"
+      stroke-dasharray="106.8" stroke-dashoffset="106.8" transform="rotate(-90 20 20)"/>
+  </svg>
+</div>
+<div class="fade-overlay" id="fadeOverlay"></div>
+
+<audio id="bgMusic" loop preload="auto">
+  <source src="https://files.catbox.moe/gehbib.mp3" type="audio/mpeg">
+</audio>
+
+<!-- SCENE: NAME GATE -->
+<section class="scene active" id="scene-gate">
+  <div class="vignette"></div>
+  <div class="decor-layer">
+    <span class="decor-item" style="left:8%;animation-duration:14s;animation-delay:0s;">✦</span>
+    <span class="decor-item" style="left:80%;animation-duration:18s;animation-delay:3s;">✧</span>
+    <span class="decor-item" style="left:45%;animation-duration:16s;animation-delay:6s;">✦</span>
+  </div>
+  <div class="corner-ornament tl"></div>
+  <div class="corner-ornament br"></div>
+  <div class="eyebrow">a contract awaits</div>
+  <div class="title">Speak the name<br>that opens this door</div>
+  <div class="dialogue-box">
+    <div class="fold-line f1"></div>
+    <div class="fold-line f2"></div>
+    <div class="seal-wax"></div>
+    <p class="line" id="gateLine">&nbsp;</p>
+    <div class="answer-row">
+      <input type="text" id="nameInput" placeholder="your name" autocomplete="off">
+      <button id="nameSubmit">Enter</button>
+    </div>
+    <p class="hint" id="nameHint">&nbsp;</p>
+  </div>
+</section>
+
+<!-- SCENE: RIDDLE 1 — ROSE / POKEBALL -->
+<section class="scene" id="scene-r1" data-decor="rose">
+  <div class="bg-photo" style="background-image:url('https://files.catbox.moe/jnrf4m.jpg');"></div>
+  <div class="vignette"></div>
+  <div class="decor-layer">
+    <span class="decor-item" style="left:10%;animation-duration:15s;animation-delay:0s;color:#c5677a;">❀</span>
+    <span class="decor-item" style="left:85%;animation-duration:19s;animation-delay:4s;color:#c5677a;">❀</span>
+    <span class="decor-item" style="left:50%;animation-duration:17s;animation-delay:8s;color:#c5677a;">✿</span>
+  </div>
+  <div class="corner-ornament tl"></div>
+  <div class="corner-ornament br"></div>
+  <div class="eyebrow">riddle I</div>
+  <div class="dialogue-box">
+    <div class="fold-line f1"></div>
+    <div class="fold-line f2"></div>
+    <div class="seal-wax"></div>
+    <p class="line" data-i="0">I am a sphere split between dark and light.</p>
+    <p class="line" data-i="1">You do not chase me — I choose to be caught.</p>
+    <p class="line" data-i="2">Once sealed, I never wish to be freed.</p>
+    <p class="line" data-i="3">What am I?</p>
+    <p class="advance" data-next="answer">continue ▾</p>
+    <div class="answer-row">
+      <input type="text" id="ans1" placeholder="your answer" autocomplete="off">
+      <button data-check="1">Answer</button>
+    </div>
+    <p class="hint" data-hint="1">&nbsp;</p>
+  </div>
+</section>
+
+<!-- SCENE: RIDDLE 2 — ORANGE / CARIÑO -->
+<section class="scene" id="scene-r2" data-decor="orange">
+  <div class="bg-photo" style="background-image:url('https://files.catbox.moe/a8d9hc.jpg');"></div>
+  <div class="vignette"></div>
+  <div class="decor-layer">
+    <span class="decor-item" style="left:12%;animation-duration:16s;animation-delay:1s;color:#d98a4a;">●</span>
+    <span class="decor-item" style="left:78%;animation-duration:18s;animation-delay:5s;color:#d98a4a;">●</span>
+    <span class="decor-item" style="left:55%;animation-duration:14s;animation-delay:9s;color:#d98a4a;">✦</span>
+  </div>
+  <div class="corner-ornament tl"></div>
+  <div class="corner-ornament br"></div>
+  <div class="eyebrow">riddle II</div>
+  <div class="dialogue-box">
+    <div class="fold-line f1"></div>
+    <div class="fold-line f2"></div>
+    <div class="seal-wax"></div>
+    <p class="line" data-i="0">Not a word in your first tongue, nor in mine.</p>
+    <p class="line" data-i="1">Yet when you say it, it sounds like something I've always known.</p>
+    <p class="line" data-i="2">No one else is allowed to call me by it.</p>
+    <p class="line" data-i="3">What is it?</p>
+    <p class="advance" data-next="answer">continue ▾</p>
+    <div class="answer-row">
+      <input type="text" id="ans2" placeholder="your answer" autocomplete="off">
+      <button data-check="2">Answer</button>
+    </div>
+    <p class="hint" data-hint="2">&nbsp;</p>
+  </div>
+</section>
+
+<!-- SCENE: RIDDLE 3 — WATERMELON / PEARLS -->
+<section class="scene" id="scene-r3" data-decor="watermelon">
+  <div class="bg-photo" style="background-image:url('https://files.catbox.moe/1do47u.jpg');"></div>
+  <div class="vignette"></div>
+  <div class="decor-layer">
+    <span class="decor-item" style="left:14%;animation-duration:15s;animation-delay:0s;color:#c5556a;">✦</span>
+    <span class="decor-item" style="left:82%;animation-duration:17s;animation-delay:4s;color:#7fae6a;">✧</span>
+    <span class="decor-item" style="left:48%;animation-duration:19s;animation-delay:8s;color:#c5556a;">●</span>
+  </div>
+  <div class="corner-ornament tl"></div>
+  <div class="corner-ornament br"></div>
+  <div class="eyebrow">riddle III</div>
+  <div class="dialogue-box">
+    <div class="fold-line f1"></div>
+    <div class="fold-line f2"></div>
+    <div class="seal-wax"></div>
+    <p class="line" data-i="0">I gave you a number, not a gift —</p>
+    <p class="line" data-i="1">yet somehow it became the thing that let you grow.</p>
+    <p class="line" data-i="2">You trusted me with something small, and called it nothing.</p>
+    <p class="line" data-i="3">What did I give you, in a world full of strangers' chat?</p>
+    <p class="advance" data-next="answer">continue ▾</p>
+    <div class="answer-row">
+      <input type="text" id="ans3" placeholder="your answer" autocomplete="off">
+      <button data-check="3">Answer</button>
+    </div>
+    <p class="hint" data-hint="3">&nbsp;</p>
+  </div>
+</section>
+
+<!-- SCENE: RIDDLE 4 — BUTTERFLY / AERA NYRA -->
+<section class="scene" id="scene-r4" data-decor="butterfly">
+  <div class="bg-photo" style="background-image:url('https://files.catbox.moe/u8u34b.jpg');"></div>
+  <div class="vignette"></div>
+  <div class="decor-layer">
+    <span class="decor-item" style="left:10%;animation-duration:18s;animation-delay:0s;color:#a89bd0;">❋</span>
+    <span class="decor-item" style="left:80%;animation-duration:16s;animation-delay:5s;color:#a89bd0;">❋</span>
+    <span class="decor-item" style="left:50%;animation-duration:20s;animation-delay:10s;color:var(--accent-gold);">✦</span>
+  </div>
+  <div class="corner-ornament tl"></div>
+  <div class="corner-ornament br"></div>
+  <div class="eyebrow">riddle IV</div>
+  <div class="dialogue-box">
+    <div class="fold-line f1"></div>
+    <div class="fold-line f2"></div>
+    <div class="seal-wax"></div>
+    <p class="line" data-i="0">We were given a name neither of us wrote.</p>
+    <p class="line" data-i="1">Now it's carved somewhere no one can erase it.</p>
+    <p class="line" data-i="2">You once said you wanted it for a title.</p>
+    <p class="line" data-i="3">What is our name?</p>
+    <p class="advance" data-next="answer">continue ▾</p>
+    <div class="answer-row">
+      <input type="text" id="ans4" placeholder="your answer" autocomplete="off">
+      <button data-check="4">Answer</button>
+    </div>
+    <p class="hint" data-hint="4">&nbsp;</p>
+  </div>
+</section>
+
+<!-- SCENE: RIDDLE 5 — FIREWORKS / ANYTHING AND EVERYTHING -->
+<section class="scene" id="scene-r5" data-decor="fireworks">
+  <div class="bg-photo" style="background-image:url('https://files.catbox.moe/hfrny9.jpg');"></div>
+  <div class="vignette"></div>
+  <div class="decor-layer">
+    <span class="decor-item" style="left:15%;animation-duration:14s;animation-delay:0s;color:var(--accent-gold);">✦</span>
+    <span class="decor-item" style="left:75%;animation-duration:17s;animation-delay:3s;color:#c5677a;">✧</span>
+    <span class="decor-item" style="left:50%;animation-duration:15s;animation-delay:7s;color:var(--accent-gold);">✦</span>
+  </div>
+  <div class="corner-ornament tl"></div>
+  <div class="corner-ornament br"></div>
+  <div class="eyebrow">riddle V</div>
+  <div class="dialogue-box">
+    <div class="fold-line f1"></div>
+    <div class="fold-line f2"></div>
+    <div class="seal-wax"></div>
+    <p class="line" data-i="0">Not a vow with conditions. Not a promise with limits.</p>
+    <p class="line" data-i="1">Just two words that started as a joke between us.</p>
+    <p class="line" data-i="2">No due date was ever written.</p>
+    <p class="line" data-i="3">What were those two words?</p>
+    <p class="advance" data-next="answer">continue ▾</p>
+    <div class="answer-row">
+      <input type="text" id="ans5" placeholder="your answer" autocomplete="off">
+      <button data-check="5">Answer</button>
+    </div>
+    <p class="hint" data-hint="5">&nbsp;</p>
+  </div>
+</section>
+
+<!-- SCENE: FINAL REVEAL -->
+<section class="scene" id="scene-final" data-decor="final">
+  <div class="vignette"></div>
+  <div class="decor-layer">
+    <span class="decor-item" style="left:10%;animation-duration:18s;animation-delay:0s;color:#c5677a;">❀</span>
+    <span class="decor-item" style="left:85%;animation-duration:20s;animation-delay:4s;color:var(--accent-gold);">✦</span>
+    <span class="decor-item" style="left:50%;animation-duration:22s;animation-delay:9s;color:#a89bd0;">❋</span>
+  </div>
+  <div class="corner-ornament tl"></div>
+  <div class="corner-ornament br"></div>
+  <div class="eyebrow">the seal is broken</div>
+  <div class="dialogue-box" style="max-width:620px;">
+    <div class="fold-line f1"></div>
+    <div class="fold-line f2"></div>
+    <div class="seal-wax"></div>
+    <div class="reveal-content" id="finalText"></div>
+    <div class="gallery">
+      <img src="https://files.catbox.moe/2y2aps.jpg" alt="">
+      <img src="https://files.catbox.moe/976wjg.jpg" alt="">
+    </div>
+  </div>
+</section>
+
+<script>
+const scenes = ["scene-gate","scene-r1","scene-r2","scene-r3","scene-r4","scene-r5","scene-final"];
+let current = 0;
+const fadeOverlay = document.getElementById("fadeOverlay");
+const music = document.getElementById("bgMusic");
+const soundToggle = document.getElementById("soundToggle");
+let musicOn = true;
+
+function normalize(s){
+  return s.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]/g,"");
+}
+
+let sharedCtx = null;
+function getCtx(){
+  if(!sharedCtx){
+    try{ sharedCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; }
+  }
+  if(sharedCtx.state === "suspended") sharedCtx.resume();
+  return sharedCtx;
+}
+
+function playClick(){
+  const ctx = getCtx();
+  if(!ctx) return;
+  try{
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "sine";
+    o.frequency.value = 680 + Math.random()*80;
+    g.gain.value = 0.035;
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.1);
+    o.stop(ctx.currentTime + 0.12);
+  }catch(e){}
+}
+
+function playUnlock(){
+  const ctx = getCtx();
+  if(!ctx) return;
+  try{
+    [520,780,1040].forEach((f,i)=>{
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = f;
+      g.gain.value = 0.05;
+      o.connect(g); g.connect(ctx.destination);
+      const start = ctx.currentTime + i*0.12;
+      o.start(start);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.3);
+      o.stop(start + 0.32);
+    });
+  }catch(e){}
+}
+
+function unfoldBox(sceneEl){
+  const box = sceneEl.querySelector(".dialogue-box");
+  const seal = sceneEl.querySelector(".seal-wax");
+  if(!box) return;
+  box.classList.remove("unfolded");
+  if(seal) seal.classList.remove("show");
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      box.classList.add("unfolded");
+      playClick();
+      setTimeout(()=>{ if(seal) seal.classList.add("show"); }, 700);
+    }, 80);
+  });
+}
+
+function goToScene(index){
+  fadeOverlay.classList.add("active");
+  setTimeout(()=>{
+    document.getElementById(scenes[current]).classList.remove("active");
+    current = index;
+    const next = document.getElementById(scenes[current]);
+    next.classList.add("active");
+    updateSeal();
+    fadeOverlay.classList.remove("active");
+    unfoldBox(next);
+    if(scenes[current].startsWith("scene-r")){
+      setTimeout(()=> runDialogue(next), 600);
+    }
+    if(scenes[current] === "scene-final"){
+      setTimeout(()=> runFinal(), 600);
+    }
+  }, 500);
+}
+
+function updateSeal(){
+  const total = 5;
+  const solved = Math.max(0, Math.min(total, current - 1));
+  const circumference = 106.8;
+  const offset = circumference - (circumference * (solved/total));
+  document.getElementById("sealArc").style.transition = "stroke-dashoffset 0.8s ease";
+  document.getElementById("sealArc").setAttribute("stroke-dashoffset", offset);
+}
+
+function typeLine(el, text, speed, callback){
+  el.classList.add("show");
+  el.innerHTML = "";
+  const cursor = document.createElement("span");
+  cursor.className = "typing-cursor";
+  let i = 0;
+  function step(){
+    if(i <= text.length){
+      el.textContent = text.slice(0, i);
+      el.appendChild(cursor);
+      i++;
+      if(i % 3 === 0) playClick();
+      setTimeout(step, speed);
+    } else {
+      cursor.remove();
+      if(callback) callback();
+    }
+  }
+  step();
+}
+
+function runDialogue(sceneEl){
+  const lines = sceneEl.querySelectorAll(".line");
+  const advanceBtn = sceneEl.querySelector(".advance");
+  const answerRow = sceneEl.querySelector(".answer-row");
+  const texts = [];
+  lines.forEach(l => {
+    if(!l.dataset.fullText) l.dataset.fullText = l.textContent;
+    texts.push(l.dataset.fullText);
+    l.classList.remove("show");
+    l.textContent = "";
+  });
+  if(advanceBtn) advanceBtn.classList.remove("show");
+  if(answerRow) answerRow.classList.remove("show");
+
+  let i = 0;
+  function next(){
+    if(i < lines.length){
+      typeLine(lines[i], texts[i], 28, () => {
+        i++;
+        setTimeout(next, 350);
+      });
+    } else {
+      if(advanceBtn) advanceBtn.classList.add("show");
+    }
+  }
+  next();
+
+  if(advanceBtn){
+    advanceBtn.onclick = () => {
+      playClick();
+      advanceBtn.classList.remove("show");
+      if(answerRow) answerRow.classList.add("show");
+    };
+  }
+}
+
+const unlockPoems = {
+  1: `<p>I never thought I'd be the one caught,<br>
+      yet here I am — stuck, and not sorry for it.<br>
+      I wish I had been your first,<br>
+      but I'll take being the one you kept instead.<br>
+      Caught, claimed, and still here.<br>
+      My PokeBall. My new husband.</p>`,
+  2: `<p>Cariño — a word unfamiliar to me,<br>
+      but I love it.<br>
+      A word only you get to call me.<br>
+      No one else.<br>
+      Just you and me.<br>
+      Your cariño. My husband.</p>`,
+  3: `<p>The first time we talked,<br>
+      it was just me helping you in world chat —<br>
+      nothing more than that, or so I thought.<br>
+      I didn't know we'd become this.<br>
+      I don't regret a single part of it.<br>
+      I just wish we could stay like this until the end.</p>`,
+  4: `<p>You said you wanted my name for the title,<br>
+      and now you have it.<br>
+      Partnership of Aera Nyra.<br>
+      Simple, but I love it.<br>
+      It tells me — without saying it —<br>
+      that you're mine.</p>`,
+  5: `<p>It's funny —<br>
+      we started this with a contract of anything and everything.<br>
+      No due date. No expiration.<br>
+      How long will our anything and everything last?<br>
+      I hope it never ends,<br>
+      so I can keep being your everything.</p>`
+};
+
+const answerKeys = {
+  1: ["pokeball"],
+  2: ["carino"],
+  3: ["pearls","id","topup","topuppearls"],
+  4: ["aeranyra"],
+  5: ["anythingandeverything","everythingandanything"]
+};
+
+const teasingWrong = [
+  "Hmm... not quite. Try again, husband.",
+  "Wrong guess. I'm not that easy to win.",
+  "Close, but no. You know me better than that.",
+  "Nope. Think harder, PokeBall trainer.",
+  "Try again — I promise it's something only you'd know."
+];
+
+document.querySelectorAll("[data-check]").forEach(btn => {
+  const num = btn.getAttribute("data-check");
+  btn.addEventListener("click", () => {
+    const input = document.getElementById("ans" + num);
+    const hint = document.querySelector(`[data-hint="${num}"]`);
+    const value = normalize(input.value);
+    if(answerKeys[num].includes(value)){
+      playUnlock();
+      showUnlock(num);
+    } else {
+      playClick();
+      hint.textContent = teasingWrong[Math.floor(Math.random()*teasingWrong.length)];
+      hint.classList.add("show");
+      input.value = "";
+      input.focus();
+    }
+  });
+  const input = document.getElementById("ans" + num);
+  input.addEventListener("keydown", (e) => { if(e.key === "Enter") btn.click(); });
+});
+
+function showUnlock(num){
+  const sceneEl = document.getElementById(scenes[current]);
+  const box = sceneEl.querySelector(".dialogue-box");
+  box.classList.remove("unfolded");
+  box.innerHTML = `<div class="fold-line f1"></div><div class="fold-line f2"></div>
+    <div class="seal-wax show"></div>
+    <div class="reveal-content" id="unlockText-${num}" style="opacity:0;transition:opacity 0.6s ease;"></div>
+    <p class="advance" id="continueAfterUnlock">continue ▾</p>`;
+  requestAnimationFrame(()=> setTimeout(()=> box.classList.add("unfolded"), 60));
+  setTimeout(() => {
+    const target = document.getElementById(`unlockText-${num}`);
+    target.innerHTML = unlockPoems[num];
+    target.style.opacity = "1";
+    setTimeout(()=> document.getElementById("continueAfterUnlock").classList.add("show"), 600);
+  }, 650);
+  document.getElementById("continueAfterUnlock").onclick = () => {
+    playClick();
+    goToScene(current + 1);
+  };
+}
+
+function runFinal(){
+  const finalText = document.getElementById("finalText");
+  finalText.innerHTML = `
+    <p>Soft and steady, you came for me.<br>
+    "We're not even married yet, but we already have couple fights" — that's what you said.</p>
+    <p>It's funny. I didn't think it would be like this.<br>
+    When you asked me to be honest, I thought you were joking.<br>
+    Same with the contract — I thought it was a joke too.<br>
+    But it's not a joke anymore.</p>
+    <p class="strong-line">You're mine.<br>My PokeBall. My sunshine. My husband.</p>
+    <p>And I hope I can make your days happier, softer, better —<br>
+    I wish it. I hope it.</p>
+    <p>There was no curse, no fine print, no binding spell.<br>
+    Just two people who didn't mean for any of this to happen —<br>
+    just you, finding me — and me, never wanting to leave.</p>
+    <p class="strong-line">I was never trapped here.<br>I chose to stay.</p>
+  `;
+}
+
+window.addEventListener("load", () => {
+  const gateScene = document.getElementById("scene-gate");
+  unfoldBox(gateScene);
+  setTimeout(() => {
+    const gateLine = document.getElementById("gateLine");
+    typeLine(gateLine, "No one else may enter here. Only one name unlocks what follows.", 26, () => {
+      gateScene.querySelector(".answer-row").classList.add("show");
+    });
+  }, 700);
+});
+
+document.getElementById("nameSubmit").addEventListener("click", () => {
+  const val = normalize(document.getElementById("nameInput").value);
+  const hint = document.getElementById("nameHint");
+  if(val === "exodus"){
+    playUnlock();
+    if(musicOn){
+      music.volume = 0.5;
+      music.play().catch(()=>{});
+    }
+    goToScene(1);
+  } else {
+    playClick();
+    hint.textContent = "That's not the name I'm waiting for... try again.";
+    hint.classList.add("show");
+    document.getElementById("nameInput").value = "";
+  }
+});
+document.getElementById("nameInput").addEventListener("keydown", (e) => {
+  if(e.key === "Enter") document.getElementById("nameSubmit").click();
+});
+
+soundToggle.addEventListener("click", () => {
+  musicOn = !musicOn;
+  if(musicOn){
+    music.play().catch(()=>{});
+    soundToggle.textContent = "♪";
+  } else {
+    music.pause();
+    soundToggle.textContent = "✕";
+  }
+});
+</script>
+
+</body>
+</html>
