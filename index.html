@@ -125,26 +125,24 @@
   }
   .line.show{opacity:1;transform:translateY(0);}
   .advance{
+    margin-top:1.5rem;
     display:inline-block;
-    margin-top:1.75rem;
-    font-family:'EB Garamond',serif;
-    font-size:13px;
+    font-size:12px;
     letter-spacing:1.5px;
     text-transform:uppercase;
     color:var(--accent-gold);
-    background:rgba(184,145,90,0.08);
-    border:0.5px solid var(--accent-gold);
+    border:1px solid var(--accent-gold);
+    background:rgba(184,145,90,0.10);
     border-radius:3px;
-    padding:10px 20px;
+    padding:10px 22px;
     cursor:pointer;
     opacity:0;
-    transform:translateY(4px);
-    transition:opacity 0.6s ease, transform 0.6s ease, background 0.3s ease, color 0.3s ease;
+    transition:opacity 0.6s ease, background 0.3s ease, color 0.3s ease;
     user-select:none;
   }
-  .advance.show{opacity:1;transform:translateY(0);animation:pulse 1.8s ease-in-out infinite;}
   .advance:hover{background:var(--accent-gold);color:var(--bg-deep);}
-  @keyframes pulse{0%,100%{opacity:0.8;}50%{opacity:1;}}
+  .advance.show{opacity:1;animation:pulse 1.8s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:0.7;}50%{opacity:1;}}
   .answer-row{
     display:none;
     margin-top:1.75rem;
@@ -246,22 +244,21 @@
     inset:0;
     overflow:hidden;
     pointer-events:none;
-    z-index:6;
+    z-index:5;
   }
   .decor-item{
     position:absolute;
-    bottom:-40px;
     opacity:0;
     font-size:20px;
     color:var(--accent-gold);
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));
     animation:driftFloat linear infinite;
-    filter:drop-shadow(0 2px 6px rgba(0,0,0,0.45));
   }
   @keyframes driftFloat{
     0%{opacity:0;transform:translateY(0) rotate(0deg);}
-    10%{opacity:0.85;}
-    90%{opacity:0.85;}
-    100%{opacity:0;transform:translateY(-105vh) rotate(40deg);}
+    8%{opacity:0.85;}
+    92%{opacity:0.85;}
+    100%{opacity:0;transform:translateY(-100vh) rotate(40deg);}
   }
   .corner-ornament{
     position:absolute;
@@ -414,7 +411,7 @@
     <p class="line" data-i="1">You do not chase me — I choose to be caught.</p>
     <p class="line" data-i="2">Once sealed, I never wish to be freed.</p>
     <p class="line" data-i="3">What am I?</p>
-    <p class="advance" data-next="answer">continue ▾</p>
+    <p class="advance" data-next="answer">Next →</p>
     <div class="answer-row">
       <input type="text" id="ans1" placeholder="your answer" autocomplete="off">
       <button data-check="1">Answer</button>
@@ -442,7 +439,7 @@
     <p class="line" data-i="1">Yet when you say it, it sounds like something I've always known.</p>
     <p class="line" data-i="2">No one else is allowed to call me by it.</p>
     <p class="line" data-i="3">What is it?</p>
-    <p class="advance" data-next="answer">continue ▾</p>
+    <p class="advance" data-next="answer">Next →</p>
     <div class="answer-row">
       <input type="text" id="ans2" placeholder="your answer" autocomplete="off">
       <button data-check="2">Answer</button>
@@ -470,7 +467,7 @@
     <p class="line" data-i="1">yet somehow it became the thing that let you grow.</p>
     <p class="line" data-i="2">You trusted me with something small, and called it nothing.</p>
     <p class="line" data-i="3">What did I give you, in a world full of strangers' chat?</p>
-    <p class="advance" data-next="answer">continue ▾</p>
+    <p class="advance" data-next="answer">Next →</p>
     <div class="answer-row">
       <input type="text" id="ans3" placeholder="your answer" autocomplete="off">
       <button data-check="3">Answer</button>
@@ -498,7 +495,7 @@
     <p class="line" data-i="1">Now it's carved somewhere no one can erase it.</p>
     <p class="line" data-i="2">You once said you wanted it for a title.</p>
     <p class="line" data-i="3">What is our name?</p>
-    <p class="advance" data-next="answer">continue ▾</p>
+    <p class="advance" data-next="answer">Next →</p>
     <div class="answer-row">
       <input type="text" id="ans4" placeholder="your answer" autocomplete="off">
       <button data-check="4">Answer</button>
@@ -526,7 +523,7 @@
     <p class="line" data-i="1">Just two words that started as a joke between us.</p>
     <p class="line" data-i="2">No due date was ever written.</p>
     <p class="line" data-i="3">What were those two words?</p>
-    <p class="advance" data-next="answer">continue ▾</p>
+    <p class="advance" data-next="answer">Next →</p>
     <div class="answer-row">
       <input type="text" id="ans5" placeholder="your answer" autocomplete="off">
       <button data-check="5">Answer</button>
@@ -765,14 +762,14 @@ function showUnlock(num){
   box.classList.remove("unfolded");
   box.innerHTML = `<div class="seal-wax show"></div>
     <div class="reveal-content" id="unlockText-${num}" style="opacity:0;transition:opacity 0.6s ease;"></div>
-    <p class="advance" id="continueAfterUnlock">continue ▾</p>`;
+    <p class="advance" id="continueAfterUnlock-${num}">Next →</p>`;
   requestAnimationFrame(()=> setTimeout(()=> box.classList.add("unfolded"), 60));
   setTimeout(() => {
     const target = document.getElementById(`unlockText-${num}`);
     target.innerHTML = unlockPoems[num];
     target.style.opacity = "1";
     setTimeout(() => {
-      const contBtn = document.getElementById("continueAfterUnlock");
+      const contBtn = document.getElementById(`continueAfterUnlock-${num}`);
       if (contBtn) {
         contBtn.classList.add("show");
         contBtn.onclick = () => {
